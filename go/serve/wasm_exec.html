@@ -1,0 +1,60 @@
+<!doctype html>
+<!--
+Copyright 2018 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+-->
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>Go wasm</title>
+</head>
+
+<body>
+	<script src="wasm_exec.js"></script>
+	<script>
+		if (!WebAssembly.instantiateStreaming) { // polyfill
+			WebAssembly.instantiateStreaming = async (resp, importObject) => {
+				const source = await (await resp).arrayBuffer();
+				return await WebAssembly.instantiate(source, importObject);
+			};
+		}
+
+		const go = new Go();
+		let mod, inst;
+		WebAssembly.instantiateStreaming(fetch("test.wasm"), go.importObject).then((result) => {
+			mod = result.module;
+			inst = result.instance;
+			document.getElementById("runButton").disabled = false;
+		});
+
+		async function run() {
+			console.clear();
+			const dateStart = new Date();
+			const start = dateStart.getTime();
+			await go.run(inst);
+			inst = await WebAssembly.instantiate(mod, go.importObject); // reset instance
+			const dateEnd = new Date();
+			const end = dateEnd.getTime();
+			console.log(end - start);
+		}
+		async function runJS() {
+			console.clear();
+			const dateStart = new Date();
+			const start = dateStart.getTime();
+			for(let i = 0;i<100000000;i++){
+
+			}
+			const dateEnd = new Date();
+			const end = dateEnd.getTime();
+			console.log("this is pure js");
+			console.log(end - start);
+		}
+	</script>
+
+	<button onClick="run();" id="runButton" disabled>Run</button>
+	<button onClick="runJS();" id="runJSButton">RunJS</button>
+</body>
+
+</html>
